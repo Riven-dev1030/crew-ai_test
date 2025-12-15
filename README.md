@@ -108,8 +108,8 @@ new_task = Task(
 ## 配置說明
 
 ### 模型配置
-- 默認使用 `gpt-4-turbo`
-- 可在 `ChatOpenAI` 初始化時修改 `model_name`
+- 默認使用 `claude-3-5-sonnet-20241022`
+- 可在 `ChatAnthropic` 初始化時修改 `model_name`
 - `temperature` 控制創意度（0-1，較低更確定性）
 
 ### 執行控制
@@ -125,19 +125,22 @@ new_task = Task(
 
 ## 故障排除
 
-### 缺少 OPENAI_API_KEY
+### 缺少 ANTHROPIC_API_KEY
 ```
-解決方案：export OPENAI_API_KEY='your-key-here'
+解決方案：export ANTHROPIC_API_KEY='your-key-here'
 ```
 
 ### 模塊導入錯誤
 ```
-解決方案：確保所有依賴已安裝 pip install -r requirements.txt
+解決方案：確保所有依賴已安裝：pip install -r requirements.txt
 ```
 
-### 速率限制錯誤
+### API 連接錯誤
 ```
-解決方案：增加請求間隔或升級 OpenAI 賬戶
+解決方案：
+1. 檢查 ANTHROPIC_API_KEY 是否設置正確
+2. 確認網絡連接是否正常
+3. 訪問 https://console.anthropic.com 驗證 API 密鑰有效性
 ```
 
 ## 許可證
