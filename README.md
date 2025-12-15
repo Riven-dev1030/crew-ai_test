@@ -108,10 +108,13 @@ new_task = Task(
 ## 配置說明
 
 ### 模型配置
-- 默認使用 `claude-3-5-haiku-20241022`（Claude Haiku 3.5）
+- 默認使用 `claude-haiku-4-5`（Claude Haiku 4.5 - 最新）
+  - 速度快 4-5 倍
+  - 成本只需 1/3
+  - 性能達到 Sonnet 90%
 - 可在 `ChatAnthropic` 初始化時修改 `model_name`
 - `temperature` 控制創意度（0-1，較低更確定性）
-- 其他可用模型：`claude-3-5-sonnet-20241022`、`claude-opus-4-1-20250805`
+- 其他可用模型：`claude-opus-4-5`、`claude-sonnet-4-5`
 
 ### 執行控制
 - `verbose=True` - 顯示詳細執行日誌

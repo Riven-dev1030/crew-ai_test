@@ -36,7 +36,7 @@ def generate_recommendation(anime_name: str, style: str) -> str:
 # ==================== 設置LLM ====================
 
 llm = ChatAnthropic(
-    model_name="claude-3-5-haiku-20241022",
+    model_name="claude-haiku-4-5",
     temperature=0.7,
     api_key=os.getenv("ANTHROPIC_API_KEY")
 )
