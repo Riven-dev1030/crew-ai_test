@@ -108,9 +108,10 @@ new_task = Task(
 ## 配置說明
 
 ### 模型配置
-- 默認使用 `claude-3-5-sonnet-20241022`
+- 默認使用 `claude-3-5-haiku-20241022`（Claude Haiku 3.5）
 - 可在 `ChatAnthropic` 初始化時修改 `model_name`
 - `temperature` 控制創意度（0-1，較低更確定性）
+- 其他可用模型：`claude-3-5-sonnet-20241022`、`claude-opus-4-1-20250805`
 
 ### 執行控制
 - `verbose=True` - 顯示詳細執行日誌
