@@ -5,9 +5,13 @@ CrewAI MVP: 動漫介紹與推薦系統
 """
 
 import os
+from dotenv import load_dotenv
 from crewai import Agent, Task, Crew
-from crewai_tools import tool
+from crewai.tools import tool
 from langchain_anthropic import ChatAnthropic
+
+# 加載 .env 文件
+load_dotenv()
 
 # ==================== 自定義工具 ====================
 
