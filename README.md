@@ -109,9 +109,9 @@ new_task = Task(
 
 ### 模型配置
 - 默認使用 `claude-haiku-4-5`（Claude Haiku 4.5 - 最新）
-  - 速度快 4-5 倍
-  - 成本只需 1/3
-  - 性能達到 Sonnet 90%
+  - 速度比 Sonnet 4.5 快 4-5 倍
+  - 成本僅需 1/3
+  - 性能達到 Sonnet 4.5 的 90%
 - 可在 `ChatAnthropic` 初始化時修改 `model_name`
 - `temperature` 控制創意度（0-1，較低更確定性）
 - 其他可用模型：`claude-opus-4-5`、`claude-sonnet-4-5`
