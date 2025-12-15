@@ -1,62 +1,63 @@
 #!/usr/bin/env python3
 """
-CrewAI MVP: 市場研究與內容生成系統
+CrewAI MVP: 動漫介紹與推薦系統
 這個示例展示了多個代理如何協作完成複雜任務
 """
 
 import os
 from crewai import Agent, Task, Crew
 from crewai_tools import tool
-from langchain_openai import ChatOpenAI
+from langchain_anthropic import ChatAnthropic
 
 # ==================== 自定義工具 ====================
 
 @tool
-def search_market_data(topic: str) -> str:
-    """搜索市場數據和趨勢信息"""
-    # 在實際應用中，這裡可以連接真實的API
-    data = {
-        "AI助手": "目前市場增長率30%，主要應用在客服和內容生成",
-        "軟件開發工具": "DevOps和低代碼平台增長快速，市場規模100億美元",
-        "數據分析": "實時分析工具需求量大，市場預期年複合增長率25%"
+def search_anime_info(anime_name: str) -> str:
+    """搜索動漫的詳細信息"""
+    # 在實際應用中，這裡可以連接真實的API（如MyAnimeList、AniDB等）
+    anime_data = {
+        "進擊的巨人": "日本漫畫改編，2013年開始連載。故事背景在被巨人圍困的世界，主角艾倫決心消滅所有巨人。評分8.5/10，共4季。",
+        "咒術回戰": "2018年漫畫開始連載，2020年動畫化。講述少年虎杖悠仁與詛咒對抗的故事。評分8.7/10，是當前最受歡迎的動漫之一。",
+        "死亡筆記": "經典懸疑動漫，2006年播出。主角撿到死亡筆記，與一位天才偵探L展開博弈。評分9.0/10，共37集。",
+        "鬼滅之刃": "2019年動畫化，2020年推出劇場版。故事講述少年炭治郎為拯救妹妹而加入鬼殺隊。評分8.8/10，極高人氣。"
     }
-    return data.get(topic, f"關於{topic}的市場信息：市場持續增長中")
+    return anime_data.get(anime_name, f"關於{anime_name}的信息：這是一部受歡迎的日本動漫作品，故事精彩，值得觀看。")
 
 @tool
-def generate_content(topic: str, style: str) -> str:
-    """生成指定風格的內容"""
+def generate_recommendation(anime_name: str, style: str) -> str:
+    """生成指定風格的推薦文章"""
     styles = {
-        "技術": f"## {topic}技術深度解析\n\n{topic}是當今技術領域的重要方向...",
-        "商業": f"## {topic}商業機會分析\n\n在競爭激烈的市場中，{topic}提供了新的商業價值...",
-        "教育": f"## {topic}初學者指南\n\n如果您是第一次接觸{topic}，本指南將幫助您快速入門..."
+        "劇情分析": f"## {anime_name}劇情深度解析\n\n{anime_name}以其精巧的故事結構而聞名。劇情發展層層遞進，人物塑造深邃而複雜...",
+        "觀影指南": f"## {anime_name}新手觀影指南\n\n如果您是第一次觀看{anime_name}，本指南將幫助您快速上手。首先應該了解背景設定...",
+        "推薦理由": f"## 為什麼要看{anime_name}\n\n{anime_name}是一部不容錯過的傑作。它兼具視覺震撼和情感深度，能夠引發觀眾的思考..."
     }
-    return styles.get(style, f"關於{topic}的{style}內容")
+    return styles.get(style, f"關於{anime_name}的{style}推薦文章")
 
 # ==================== 設置LLM ====================
 
-llm = ChatOpenAI(
-    model_name="gpt-4-turbo",
+llm = ChatAnthropic(
+    model_name="claude-3-5-sonnet-20241022",
     temperature=0.7,
-    api_key=os.getenv("OPENAI_API_KEY")
+    api_key=os.getenv("ANTHROPIC_API_KEY")
 )
 
 # ==================== 定義代理 ====================
 
-# 代理1: 市場研究員
-market_researcher = Agent(
-    role="市場研究員",
-    goal="分析市場趨勢和競爭環境，提供深入的市場洞察",
-    backstory="擁有10年市場研究經驗，精通數據分析和趨勢預測",
-    tools=[search_market_data],
+# 代理1: 動漫評論家
+anime_critic = Agent(
+    role="動漫評論家",
+    goal="深入分析動漫作品，提供專業的評論和洞察",
+    backstory="資深動漫愛好者，擁有15年動漫觀看和評論經驗，熟悉各類型動漫的優缺點",
+    tools=[search_anime_info],
     llm=llm,
     verbose=True
 )
 
-# 代理2: 內容策略師
-content_strategist = Agent(
-    role="內容策略師",
-    goal="根據市場洞察制定內容策略，確保內容與目標受眾相符",
-    backstory="資深內容營銷專家，擅長制定針對性的內容策略",
+# 代理2: 推薦策略專家
+recommendation_specialist = Agent(
+    role="推薦策略專家",
+    goal="根據動漫特點制定推薦策略，匹配不同類型的觀眾",
+    backstory="內容營銷和推薦系統專家，擅長為不同受眾群體制定針對性的推薦計劃",
     tools=[],
     llm=llm,
     verbose=True
@@ -64,35 +65,35 @@ content_strategist = Agent(
 
 # 代理3: 內容創作者
 content_creator = Agent(
-    role="內容創作者",
-    goal="生成高質量、吸引人的內容，符合策略要求",
-    backstory="創意寫手，擁有豐富的多風格內容創作經驗",
-    tools=[generate_content],
+    role="文案創作者",
+    goal="生成高質量、引人入勝的動漫推薦文章",
+    backstory="資深文案寫手，擅長用各種風格創作引人入勝的內容，曾為多家動漫網站和平台創作推薦文章",
+    tools=[generate_recommendation],
     llm=llm,
     verbose=True
 )
 
 # ==================== 定義任務 ====================
 
-# 任務1: 市場研究
-task_research = Task(
-    description="對以下主題進行深入的市場研究：{topic}\n請提供市場規模、增長率、主要競爭者和機遇",
-    agent=market_researcher,
-    expected_output="詳細的市場研究報告，包括市場規模、增長趨勢和機遇分析"
+# 任務1: 動漫分析
+task_analysis = Task(
+    description="對動漫 {topic} 進行深入的分析和評論：\n請提供劇情概述、角色評價、視覺風格、評分和推薦指數",
+    agent=anime_critic,
+    expected_output="詳細的動漫分析報告，包括劇情、角色、畫風和整體評價"
 )
 
-# 任務2: 內容策略
+# 任務2: 推薦策略
 task_strategy = Task(
-    description="基於市場研究結果，為主題 {topic} 制定內容策略\n請考慮目標受眾、內容類型和發佈渠道",
-    agent=content_strategist,
-    expected_output="完整的內容策略文檔，包括受眾分析和內容計劃"
+    description="基於動漫分析結果，為 {topic} 制定推薦策略\n請考慮目標觀眾、最佳觀影順序和推薦重點",
+    agent=recommendation_specialist,
+    expected_output="完整的推薦策略文檔，包括受眾分析和推薦重點"
 )
 
-# 任務3: 內容生成
+# 任務3: 推薦文章生成
 task_content = Task(
-    description="根據內容策略，為主題 {topic} 生成3個不同風格的內容片段\n風格包括：技術、商業、教育",
+    description="根據推薦策略，為 {topic} 生成3個不同風格的推薦文章\n風格包括：劇情分析、觀影指南、推薦理由",
     agent=content_creator,
-    expected_output="3個高質量的內容片段，每個不同風格"
+    expected_output="3篇高質量的推薦文章，每篇風格不同"
 )
 
 # ==================== 創建團隊並執行 ====================
@@ -100,13 +101,13 @@ task_content = Task(
 def run_crew(topic: str):
     """運行CrewAI團隊"""
     print(f"\n{'='*60}")
-    print(f"開始處理主題: {topic}")
+    print(f"開始為您分析動漫: {topic}")
     print(f"{'='*60}\n")
 
     # 創建團隊，定義任務順序
     crew = Crew(
-        agents=[market_researcher, content_strategist, content_creator],
-        tasks=[task_research, task_strategy, task_content],
+        agents=[anime_critic, recommendation_specialist, content_creator],
+        tasks=[task_analysis, task_strategy, task_content],
         verbose=True,
         max_iter=3  # 每個任務的最大迭代次數
     )
@@ -115,7 +116,7 @@ def run_crew(topic: str):
     result = crew.kickoff(inputs={"topic": topic})
 
     print(f"\n{'='*60}")
-    print("最終結果:")
+    print("推薦結果:")
     print(f"{'='*60}")
     print(result)
 
@@ -125,11 +126,11 @@ def run_crew(topic: str):
 
 if __name__ == "__main__":
     # 檢查API密鑰
-    if not os.getenv("OPENAI_API_KEY"):
-        print("警告: 未設置 OPENAI_API_KEY 環境變量")
-        print("請設置: export OPENAI_API_KEY='your-key-here'")
+    if not os.getenv("ANTHROPIC_API_KEY"):
+        print("警告: 未設置 ANTHROPIC_API_KEY 環境變量")
+        print("請設置: export ANTHROPIC_API_KEY='your-key-here'")
         print("\n將使用本地模擬模式運行...")
 
-    # 運行示例
-    topic = "AI助手市場"
+    # 運行示例 - 分析經典動漫
+    topic = "鬼滅之刃"
     run_crew(topic)

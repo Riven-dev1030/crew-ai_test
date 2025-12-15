@@ -1,16 +1,17 @@
-# CrewAI MVP: 市場研究與內容生成系統
+# CrewAI MVP: 動漫介紹與推薦系統
 
-這是一個完整的 CrewAI 最小可行產品（MVP），展示了多個 AI 代理如何協作完成複雜任務。
+這是一個完整的 CrewAI 最小可行產品（MVP），展示了多個 Claude AI 代理如何協作完成複雜任務。
+使用 Anthropic 的 Claude 大語言模型，建立智能動漫推薦和分析系統。
 
 ## 功能概述
 
 ### 三個協作代理：
-1. **市場研究員** - 分析市場趨勢和競爭環境
-2. **內容策略師** - 根據市場洞察制定內容策略
-3. **內容創作者** - 生成高質量的多風格內容
+1. **動漫評論家** - 分析動漫作品特點，提供專業評論
+2. **推薦策略專家** - 根據動漫特點制定推薦策略
+3. **文案創作者** - 生成高質量的推薦文章
 
 ### 三個順序執行的任務：
-1. 進行市場研究 → 2. 制定內容策略 → 3. 生成內容
+1. 分析動漫 → 2. 制定推薦策略 → 3. 生成推薦文章
 
 ## 快速開始
 
@@ -19,14 +20,19 @@
 pip install -r requirements.txt
 ```
 
-### 2. 配置 OpenAI API
+### 2. 配置 Claude API
 ```bash
 # 複製示例配置文件
 cp .env.example .env
 
-# 編輯 .env 文件，添加您的 OpenAI API 密鑰
-# export OPENAI_API_KEY='your-api-key-here'
+# 編輯 .env 文件，添加您的 Anthropic API 密鑰
+export ANTHROPIC_API_KEY='your-api-key-here'
 ```
+
+**獲取 API 密鑰**：
+1. 訪問 [Anthropic Console](https://console.anthropic.com)
+2. 創建新的 API 密鑰
+3. 將密鑰保存到 `.env` 文件
 
 ### 3. 運行程序
 ```bash
@@ -46,8 +52,8 @@ crew-ai_test/
 ## 代碼主要組件
 
 ### 自定義工具
-- `search_market_data()` - 搜索市場數據
-- `generate_content()` - 生成指定風格的內容
+- `search_anime_info()` - 搜索動漫的詳細信息
+- `generate_recommendation()` - 生成指定風格的推薦文章
 
 ### 代理配置
 每個代理定義了：
