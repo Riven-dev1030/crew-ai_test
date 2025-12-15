@@ -15,12 +15,35 @@
 
 ## 快速開始
 
-### 1. 安裝依賴
+### 1. 創建並啟用虛擬環境
+
+```bash
+# 進入項目目錄
+cd crew-ai_test
+
+# 創建虛擬環境
+python3 -m venv venv
+
+# 啟用虛擬環境
+# Linux / macOS
+source venv/bin/activate
+
+# Windows
+venv\Scripts\activate
+```
+
+啟用後終端會顯示：
+```
+(venv) user@host:~/crew-ai_test$
+```
+
+### 2. 安裝依賴
+
 ```bash
 pip install -r requirements.txt
 ```
 
-### 2. 配置 Claude API
+### 3. 配置 Claude API
 ```bash
 # 複製示例配置文件
 cp .env.example .env
@@ -34,10 +57,56 @@ export ANTHROPIC_API_KEY='your-api-key-here'
 2. 創建新的 API 密鑰
 3. 將密鑰保存到 `.env` 文件
 
-### 3. 運行程序
+### 4. 運行程序
+
+**演示版本**（無需 API 密鑰）：
+```bash
+python demo.py
+```
+
+**完整版本**（需要 Claude API 密鑰）：
 ```bash
 python main.py
 ```
+
+## 虛擬環境
+
+### 什麼是虛擬環境？
+
+虛擬環境是一個獨立的 Python 環境，讓妳的項目依賴不會影響系統 Python。
+
+### 虛擬環境位置
+
+```
+crew-ai_test/
+└── venv/              ← 虛擬環境目錄
+    ├── bin/           ← Python 可執行文件
+    ├── lib/           ← 已安裝的套件
+    └── pyvenv.cfg    ← 配置文件
+```
+
+### 常用命令
+
+```bash
+# 啟用虛擬環境
+source venv/bin/activate     # Linux / macOS
+venv\Scripts\activate        # Windows
+
+# 檢查已安裝的套件
+pip list
+
+# 安裝新套件
+pip install <package-name>
+
+# 退出虛擬環境
+deactivate
+```
+
+### 為什麼虛擬環境在 GitHub 上看不到？
+
+虛擬環境被添加到 `.gitignore`，所以不會上傳到 GitHub：
+- ✅ **優點**：減少倉庫大小、避免環境衝突
+- ✅ **方式**：別人可以透過 `pip install -r requirements.txt` 快速復現環境
 
 ## 項目結構
 
