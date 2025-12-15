@@ -1,5 +1,4 @@
-crewai==0.45.0
-crewai-tools==0.1.6
-python-dotenv==1.0.0
-langchain==0.1.14
-langchain-anthropic==0.1.8
+crewai>=1.0.0
+crewai-tools
+python-dotenv
+langchain-anthropic
