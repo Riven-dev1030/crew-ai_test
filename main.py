@@ -211,11 +211,6 @@ def run_crew(user_anime_list: str):
     # 執行流程
     result = crew.kickoff(inputs={"user_anime_list": user_anime_list})
 
-    print(f"\n{'='*60}")
-    print("推薦結果:")
-    print(f"{'='*60}")
-    print(result)
-
     return result
 
 # ==================== 主程序 ====================
