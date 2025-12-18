@@ -181,7 +181,7 @@ wiki_researcher = Agent(
     backstory="知識庫管理員，熟悉如何從各大百科全書和數據庫中提取有用信息，了解動漫行業趨勢",
     tools=[search_wikipedia_anime],
     llm=llm,
-    verbose=False
+    verbose=True  # 開啟以便查看查詢進度
 )
 
 # 代理3: 動漫推薦引擎
@@ -235,7 +235,11 @@ def run_crew(user_anime_list: str):
 
     # 執行流程
     try:
-        print("正在執行推薦任務，請稍候...")
+        print("正在執行推薦任務...")
+        print("\n[步驟 1/3] 解析用戶清單...")
+        print("[步驟 2/3] 查詢維基百科...")
+        print("[步驟 3/3] 生成推薦並保存...")
+        print("\n請稍候，代理正在工作中...\n")
         result = crew.kickoff(inputs={"user_anime_list": user_anime_list})
 
         print(f"\n{'='*60}")
