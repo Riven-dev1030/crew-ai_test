@@ -217,7 +217,7 @@ def run_crew(user_anime_list: str):
 # ==================== 主程序 ====================
 
 def load_anime_list_from_file(filename: str = "anime_list.json") -> str:
-    """從外部 JSON 文件讀取動漫清單"""
+    """從外部文件讀取動漫清單，支援多種格式 (JSON、純文本、CSV)"""
     try:
         # 獲取當前腳本所在的目錄
         script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -226,29 +226,61 @@ def load_anime_list_from_file(filename: str = "anime_list.json") -> str:
         if not os.path.exists(file_path):
             print(f"錯誤: 找不到清單文件 '{filename}'")
             print(f"預期位置: {file_path}")
-            print("\n請創建一個 JSON 格式的清單文件，例如:")
+            print("\n請創建一個清單文件，支援的格式有：")
             print('''
-{
-  "anime_list.json": [
-    "進擊的巨人",
-    "咒術回戰",
-    "鬼滅之刃"
-  ]
-}
+1. JSON 格式 (anime_list.json):
+[
+  "進擊的巨人",
+  "咒術回戰",
+  "鬼滅之刃"
+]
+
+2. 純文本格式 (anime_list.txt)，每行一部動漫：
+進擊的巨人
+咒術回戰
+鬼滅之刃
+
+3. CSV 格式 (anime_list.csv)：
+進擊的巨人
+咒術回戰
+鬼滅之刃
 ''')
             return None
 
-        with open(file_path, 'r', encoding='utf-8') as f:
-            anime_list = json.load(f)
+        # 根據文件副檔名判斷格式
+        file_extension = os.path.splitext(filename)[1].lower()
+        anime_list = []
 
-        # 確保是列表格式
-        if not isinstance(anime_list, list):
-            print(f"錯誤: {filename} 格式不正確，應該是 JSON 陣列")
+        with open(file_path, 'r', encoding='utf-8') as f:
+            if file_extension == '.json':
+                # JSON 格式
+                anime_list = json.load(f)
+                if not isinstance(anime_list, list):
+                    print(f"錯誤: {filename} 的 JSON 格式不正確，應該是陣列")
+                    return None
+
+            elif file_extension == '.txt':
+                # 純文本格式，每行一部動漫
+                anime_list = [line.strip() for line in f if line.strip()]
+
+            elif file_extension == '.csv':
+                # CSV 格式，支援單列或多列（取第一列）
+                import csv
+                reader = csv.reader(f)
+                anime_list = [row[0].strip() for row in reader if row and row[0].strip()]
+
+            else:
+                print(f"錯誤: 不支援的文件格式 '{file_extension}'")
+                print("支援的格式: .json, .txt, .csv")
+                return None
+
+        if not anime_list:
+            print(f"錯誤: {filename} 中沒有找到任何動漫")
             return None
 
         # 轉換為 JSON 字符串供 CrewAI 使用
         json_string = json.dumps(anime_list, ensure_ascii=False)
-        print(f"✓ 成功讀取清單，包含 {len(anime_list)} 部動漫")
+        print(f"✓ 成功讀取清單 ({file_extension} 格式)，包含 {len(anime_list)} 部動漫")
         return json_string
 
     except json.JSONDecodeError as e:

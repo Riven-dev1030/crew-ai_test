@@ -67,8 +67,9 @@ export ANTHROPIC_API_KEY='your-api-key-here'
 
 ### 4. 編輯清單文件（可選）
 
-編輯 `anime_list.json` 來自定義你的動漫清單：
+程式支援三種清單格式，選擇最方便的方式編輯：
 
+**JSON 格式** (`anime_list.json`)：
 ```json
 [
   "進擊的巨人",
@@ -76,6 +77,22 @@ export ANTHROPIC_API_KEY='your-api-key-here'
   "鬼滅之刃",
   "死亡筆記"
 ]
+```
+
+**純文本格式** (`anime_list.txt`)，每行一部動漫：
+```
+進擊的巨人
+咒術回戰
+鬼滅之刃
+死亡筆記
+```
+
+**CSV 格式** (`anime_list.csv`)，支援帶有年份和類型（取第一列）：
+```
+進擊的巨人,2013,動作/懸疑
+咒術回戰,2020,動作/超能力
+鬼滅之刃,2019,動作/冒險
+死亡筆記,2006,懸疑/心理
 ```
 
 ### 5. 運行程序
@@ -86,9 +103,14 @@ python main.py
 ```
 
 程序會自動：
-1. 讀取 `anime_list.json` 文件中的清單
+1. 讀取清單文件（自動偵測格式）
 2. 查詢維基百科獲取年度動漫排名
 3. 生成個性化推薦
+
+**支援的清單文件名**（程式會自動偵測第一個存在的文件）：
+- `anime_list.json` - JSON 陣列格式
+- `anime_list.txt` - 純文本格式（每行一部）
+- `anime_list.csv` - CSV 格式（取第一欄）
 
 **演示版本**（無需 API 密鑰）：
 ```bash
@@ -139,16 +161,26 @@ deactivate
 ```
 crew-ai_test/
 ├── main.py                 # 主程序（代理和任務定義）
-├── anime_list.json        # 用戶動漫清單（支援編輯）
+├── anime_list.json        # JSON 格式清單（示例）
+├── anime_list.txt         # 純文本格式清單（示例）
+├── anime_list.csv         # CSV 格式清單（示例）
 ├── requirements.txt        # 依賴包列表
 ├── .env.example           # 環境變量示例
 ├── demo.py                # 演示版本（無需API）
 └── README.md             # 本文件
 ```
 
-### anime_list.json
-用戶動漫清單文件，包含你想要推薦的動漫作品。
-程序會自動讀取此文件並進行分析。
+### 清單文件格式
+
+程式支援三種清單格式，自動偵測文件副檔名：
+
+| 格式 | 文件名 | 特點 |
+|------|--------|------|
+| **JSON** | `anime_list.json` | 結構化格式，適合複雜資料 |
+| **純文本** | `anime_list.txt` | 最簡單，每行一部動漫 |
+| **CSV** | `anime_list.csv` | 支援多欄資料，取第一欄為動漫名稱 |
+
+程式會自動偵測並解析對應格式的檔案。
 
 ## 代碼主要組件
 
@@ -158,7 +190,10 @@ crew-ai_test/
 - `recommend_anime(user_list, wiki_list)` - 根據兩個清單生成個性化推薦
 
 ### 文件讀取函數
-- `load_anime_list_from_file(filename)` - 從外部 JSON 文件讀取動漫清單
+- `load_anime_list_from_file(filename)` - 從外部文件讀取動漫清單，支援 JSON、純文本、CSV 三種格式
+  - 自動偵測文件副檔名並使用對應的解析方式
+  - 支援 UTF-8 編碼
+  - 提供詳細的錯誤提示
 
 ### 代理配置
 每個代理定義了：
@@ -246,9 +281,12 @@ new_task = Task(
 ### 清單文件格式錯誤
 ```
 解決方案：
-1. 檢查 JSON 語法是否正確（使用線上 JSON 驗證工具）
+1. 檢查文件格式是否正確
+   - JSON：使用線上 JSON 驗證工具檢查語法
+   - 純文本：確保每行一部動漫，無空行
+   - CSV：確保第一欄是動漫名稱
 2. 確保文件是 UTF-8 編碼
-3. 確保是陣列格式：["動漫1", "動漫2"]
+3. 檢查文件副檔名是否正確 (.json, .txt, .csv)
 ```
 
 ### 缺少 ANTHROPIC_API_KEY
