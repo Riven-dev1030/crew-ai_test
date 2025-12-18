@@ -40,3 +40,6 @@ Thumbs.db
 
 # Project specific
 *.log
+
+# Generated results
+推薦結果_*.txt

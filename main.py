@@ -5,6 +5,7 @@ CrewAI MVP: 動漫介紹與推薦系統
 """
 
 import os
+from datetime import datetime
 from dotenv import load_dotenv
 from crewai import Agent, Task, Crew
 from crewai.tools import tool
@@ -54,7 +55,7 @@ anime_critic = Agent(
     backstory="資深動漫愛好者，擁有15年動漫觀看和評論經驗，熟悉各類型動漫的優缺點",
     tools=[search_anime_info],
     llm=llm,
-    verbose=True
+    verbose=False
 )
 
 # 代理2: 推薦策略專家
@@ -64,7 +65,7 @@ recommendation_specialist = Agent(
     backstory="內容營銷和推薦系統專家，擅長為不同受眾群體制定針對性的推薦計劃",
     tools=[],
     llm=llm,
-    verbose=True
+    verbose=False
 )
 
 # 代理3: 內容創作者
@@ -74,7 +75,7 @@ content_creator = Agent(
     backstory="資深文案寫手，擅長用各種風格創作引人入勝的內容，曾為多家動漫網站和平台創作推薦文章",
     tools=[generate_recommendation],
     llm=llm,
-    verbose=True
+    verbose=False
 )
 
 # ==================== 定義任務 ====================
@@ -112,17 +113,32 @@ def run_crew(topic: str):
     crew = Crew(
         agents=[anime_critic, recommendation_specialist, content_creator],
         tasks=[task_analysis, task_strategy, task_content],
-        verbose=True,
+        verbose=False,  # 關閉詳細日誌輸出
         max_iter=3  # 每個任務的最大迭代次數
     )
 
     # 執行流程
+    print("正在執行分析任務，請稍候...")
     result = crew.kickoff(inputs={"topic": topic})
 
+    # 保存結果到文件
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"推薦結果_{topic}_{timestamp}.txt"
+
+    with open(filename, 'w', encoding='utf-8') as f:
+        f.write(f"{'='*60}\n")
+        f.write(f"動漫推薦分析結果\n")
+        f.write(f"主題: {topic}\n")
+        f.write(f"生成時間: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+        f.write(f"{'='*60}\n\n")
+        f.write(str(result))
+        f.write(f"\n\n{'='*60}\n")
+        f.write("分析完成\n")
+        f.write(f"{'='*60}\n")
+
     print(f"\n{'='*60}")
-    print("推薦結果:")
-    print(f"{'='*60}")
-    print(result)
+    print(f"✅ 分析完成！結果已保存到文件: {filename}")
+    print(f"{'='*60}\n")
 
     return result
 
