@@ -77,8 +77,7 @@ def search_wikipedia_anime() -> str:
 @tool
 def recommend_anime(user_list: str, wiki_list: str) -> str:
     """根據用戶清單和維基百科清單推薦動漫"""
-    recommendation = f"""
-## 動漫推薦結果
+    recommendation = f"""## 動漫推薦結果
 
 ### 分析
 - **用戶清單**: {user_list}
@@ -106,6 +105,28 @@ def recommend_anime(user_list: str, wiki_list: str) -> str:
 - 歡迎提供反饋以優化推薦
 """
     return recommendation
+
+@tool
+def save_recommendation_to_file(recommendation_content: str, filename: str = "recommendation.md") -> str:
+    """將推薦結果保存為 Markdown 文件"""
+    try:
+        # 獲取當前腳本所在的目錄
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        file_path = os.path.join(script_dir, filename)
+
+        # 確保文件名以 .md 結尾
+        if not filename.endswith('.md'):
+            filename = filename + '.md'
+            file_path = os.path.join(script_dir, filename)
+
+        # 寫入文件
+        with open(file_path, 'w', encoding='utf-8') as f:
+            f.write(recommendation_content)
+
+        return f"✓ 推薦結果已保存到: {filename}"
+
+    except Exception as e:
+        return f"❌ 保存文件失敗: {str(e)}"
 
 # ==================== 設置LLM ====================
 
@@ -140,9 +161,9 @@ wiki_researcher = Agent(
 # 代理3: 動漫推薦引擎
 recommender = Agent(
     role="動漫推薦引擎",
-    goal="根據用戶清單和業界排名，生成個性化的動漫推薦",
-    backstory="資深推薦系統專家，擅長結合多個信息源進行智能推薦，以最大化用戶滿意度",
-    tools=[recommend_anime],
+    goal="根據用戶清單和業界排名，生成個性化的動漫推薦，並保存結果為 Markdown 文件",
+    backstory="資深推薦系統專家，擅長結合多個信息源進行智能推薦，以最大化用戶滿意度，並能將結果專業地輸出為文檔",
+    tools=[recommend_anime, save_recommendation_to_file],
     llm=llm,
     verbose=True
 )
@@ -163,11 +184,11 @@ task_wiki = Task(
     expected_output="維基百科提供的優質動漫清單和相關排名信息"
 )
 
-# 任務3: 生成推薦
+# 任務3: 生成推薦並保存
 task_recommend = Task(
-    description="基於用戶清單和維基百科的優質動漫排名，為用戶生成個性化推薦。\n請分析兩個清單的交集和差異，推薦最適合用戶的動漫作品",
+    description="基於用戶清單和維基百科的優質動漫排名，為用戶生成個性化推薦。\n請分析兩個清單的交集和差異，推薦最適合用戶的動漫作品。\n最後，將推薦結果以 Markdown 格式保存到 recommendation.md 文件。",
     agent=recommender,
-    expected_output="個性化的動漫推薦清單，包含推薦理由和觀影建議"
+    expected_output="個性化的動漫推薦清單，包含推薦理由和觀影建議，並已保存為 Markdown 文件"
 )
 
 # ==================== 創建團隊並執行 ====================

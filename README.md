@@ -8,7 +8,7 @@
 ### 三個協作代理：
 1. **用戶清單解析器** - 讀取並解析用戶提供的動漫清單，理解用戶品味
 2. **維基百科研究員** - 查詢維基百科獲取年度優質動漫排名
-3. **動漫推薦引擎** - 根據用戶清單和業界排名，生成個性化推薦
+3. **動漫推薦引擎** - 根據用戶清單和業界排名，生成個性化推薦，並自動保存為 Markdown 文件
 
 ### 工作流程：
 ```
@@ -18,7 +18,9 @@
     ↓
 [維基百科研究員] → 獲取業界排名
     ↓
-[動漫推薦引擎] → 生成個性化推薦
+[動漫推薦引擎] → 生成個性化推薦 → 保存為 Markdown
+    ↓
+輸出文件 (recommendation.md)
 ```
 
 ## 快速開始
@@ -106,6 +108,7 @@ python main.py
 1. 讀取清單文件（自動偵測格式）
 2. 查詢維基百科獲取年度動漫排名
 3. 生成個性化推薦
+4. 將結果保存為 `recommendation.md` 文件
 
 **支援的清單文件名**（程式會自動偵測最新修改的文件）：
 - `anime_list.json` - JSON 陣列格式
@@ -169,6 +172,7 @@ crew-ai_test/
 ├── anime_list.json        # JSON 格式清單（示例）
 ├── anime_list.txt         # 純文本格式清單（示例）
 ├── anime_list.csv         # CSV 格式清單（示例）
+├── recommendation.md      # 推薦結果輸出文件（自動生成）
 ├── requirements.txt        # 依賴包列表
 ├── .env.example           # 環境變量示例
 ├── demo.py                # 演示版本（無需API）
@@ -193,6 +197,7 @@ crew-ai_test/
 - `read_user_list(json_string)` - 讀取和解析用戶提供的動漫清單
 - `search_wikipedia_anime()` - 查詢維基百科的年度動漫排名清單
 - `recommend_anime(user_list, wiki_list)` - 根據兩個清單生成個性化推薦
+- `save_recommendation_to_file(content, filename)` - 將推薦結果保存為 Markdown 文件
 
 ### 文件讀取函數
 - `load_anime_list_from_file(filename=None)` - 從外部文件讀取動漫清單，支援 JSON、純文本、CSV 三種格式
