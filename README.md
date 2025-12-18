@@ -110,6 +110,10 @@ python main.py
 3. 生成個性化推薦
 4. 將結果保存為 `recommendation.md` 文件
 
+**運行結果：**
+- 控制台顯示：代理運作日誌、任何錯誤信息
+- 推薦結果：保存到 `recommendation.md` 文件（不在控制台顯示）
+
 **支援的清單文件名**（程式會自動偵測最新修改的文件）：
 - `anime_list.json` - JSON 陣列格式
 - `anime_list.txt` - 純文本格式（每行一部）
@@ -280,8 +284,8 @@ new_task = Task(
 1. **編輯清單** - 修改 `anime_list.json` 來改變推薦的動漫清單
 2. **改進維基百科爬取** - 優化 `search_wikipedia_anime()` 以獲取更精準的數據
 3. **添加其他推薦來源** - 從 MyAnimeList、IMDb 等網站獲取數據
-4. **保存推薦結果** - 將推薦結果存儲到數據庫或文件
-5. **構建UI** - 使用 Streamlit 或 Flask 添加前端界面
+4. **構建UI** - 使用 Streamlit 或 Flask 添加前端界面
+5. **添加推薦理由** - 增強代理的推薦邏輯，提供更詳細的分析
 
 ## 故障排除
 
