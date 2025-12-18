@@ -2,3 +2,5 @@ crewai>=1.0.0
 crewai-tools
 python-dotenv
 langchain-anthropic
+requests
+beautifulsoup4

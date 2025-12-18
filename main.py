@@ -1,14 +1,20 @@
 #!/usr/bin/env python3
 """
-CrewAI MVP: 動漫介紹與推薦系統
-這個示例展示了多個代理如何協作完成複雜任務
+CrewAI MVP: 動漫推薦系統 (增強版)
+這個示例展示了多個代理如何協作：
+- 代理1: 讀取用戶提供的動漫清單
+- 代理2: 查詢維基百科的年度動漫排名
+- 代理3: 根據兩個清單推薦動漫
 """
 
 import os
+import json
+import requests
 from dotenv import load_dotenv
 from crewai import Agent, Task, Crew
 from crewai.tools import tool
 from langchain_anthropic import ChatAnthropic
+from bs4 import BeautifulSoup
 
 # 加載 .env 文件
 load_dotenv()
@@ -16,26 +22,107 @@ load_dotenv()
 # ==================== 自定義工具 ====================
 
 @tool
-def search_anime_info(anime_name: str) -> str:
-    """搜索動漫的詳細信息"""
-    # 在實際應用中，這裡可以連接真實的API（如MyAnimeList、AniDB等）
-    anime_data = {
-        "進擊的巨人": "日本漫畫改編，2013年開始連載。故事背景在被巨人圍困的世界，主角艾倫決心消滅所有巨人。評分8.5/10，共4季。",
-        "咒術回戰": "2018年漫畫開始連載，2020年動畫化。講述少年虎杖悠仁與詛咒對抗的故事。評分8.7/10，是當前最受歡迎的動漫之一。",
-        "死亡筆記": "經典懸疑動漫，2006年播出。主角撿到死亡筆記，與一位天才偵探L展開博弈。評分9.0/10，共37集。",
-        "鬼滅之刃": "2019年動畫化，2020年推出劇場版。故事講述少年炭治郎為拯救妹妹而加入鬼殺隊。評分8.8/10，極高人氣。"
-    }
-    return anime_data.get(anime_name, f"關於{anime_name}的信息：這是一部受歡迎的日本動漫作品，故事精彩，值得觀看。")
+def read_user_list(json_string: str) -> str:
+    """讀取和解析用戶提供的動漫清單 (JSON格式)"""
+    try:
+        anime_list = json.loads(json_string)
+        if isinstance(anime_list, list):
+            formatted_list = "\n".join([f"- {anime}" for anime in anime_list])
+            return f"成功解析用戶清單，包含以下動漫：\n{formatted_list}"
+        else:
+            return "錯誤：清單格式不正確，應該是 JSON 陣列"
+    except json.JSONDecodeError:
+        return f"錯誤：無法解析 JSON。收到的內容：{json_string}"
 
 @tool
-def generate_recommendation(anime_name: str, style: str) -> str:
-    """生成指定風格的推薦文章"""
-    styles = {
-        "劇情分析": f"## {anime_name}劇情深度解析\n\n{anime_name}以其精巧的故事結構而聞名。劇情發展層層遞進，人物塑造深邃而複雜...",
-        "觀影指南": f"## {anime_name}新手觀影指南\n\n如果您是第一次觀看{anime_name}，本指南將幫助您快速上手。首先應該了解背景設定...",
-        "推薦理由": f"## 為什麼要看{anime_name}\n\n{anime_name}是一部不容錯過的傑作。它兼具視覺震撼和情感深度，能夠引發觀眾的思考..."
-    }
-    return styles.get(style, f"關於{anime_name}的{style}推薦文章")
+def search_wikipedia_anime() -> str:
+    """查詢維基百科的年度動漫排名清單"""
+    try:
+        # 查詢維基百科中文版本的動漫列表
+        url = "https://zh.wikipedia.org/wiki/Category:%E5%8B%95%E7%95%AB_by_year"
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+
+        response = requests.get(url, headers=headers, timeout=5)
+
+        # 如果查詢失敗，返回模擬資料
+        if response.status_code != 200:
+            return """維基百科查詢失敗，返回常見的優質動漫：
+- 進擊的巨人 (2013-2023)
+- 咒術回戰 (2020-2023)
+- 鬼滅之刃 (2019-2023)
+- 死亡筆記 (2006-2007)
+- Code Geass (2006-2008)
+- Steins;Gate (2011)
+- Re:Zero (2016-2021)
+- 86 Eighty-Six (2021-2023)
+- 魔法少女小圓 (2011)
+- 新世紀福音戰士 (1995-1996)"""
+
+        soup = BeautifulSoup(response.content, 'html.parser')
+
+        # 提取分類中的動漫標題
+        categories = soup.find_all('div', {'class': 'mw-category'})
+        anime_list = []
+
+        for category in categories:
+            links = category.find_all('a')
+            for link in links[:20]:  # 限制前20個
+                title = link.get_text(strip=True)
+                if title and not title.startswith('Category'):
+                    anime_list.append(title)
+
+        if anime_list:
+            formatted_list = "\n".join([f"- {anime}" for anime in anime_list[:15]])
+            return f"從維基百科獲得的年度優質動漫清單：\n{formatted_list}"
+        else:
+            # 返回備用的經典清單
+            return """維基百科查詢完成，以下是常見的優質動漫：
+- 進擊的巨人
+- 咒術回戰
+- 鬼滅之刃
+- 死亡筆記
+- Code Geass"""
+    except Exception as e:
+        return f"""維基百科查詢發生錯誤: {str(e)}
+返回常見的優質動漫：
+- 進擊的巨人
+- 咒術回戰
+- 鬼滅之刃
+- 死亡筆記
+- Steins;Gate"""
+
+@tool
+def recommend_anime(user_list: str, wiki_list: str) -> str:
+    """根據用戶清單和維基百科清單推薦動漫"""
+    recommendation = f"""
+## 動漫推薦結果
+
+### 分析
+- **用戶清單**: {user_list}
+- **維基百科熱門作品**: {wiki_list}
+
+### 推薦策略
+1. **用戶已知作品**: 根據用戶提供的清單，理解其品味偏好
+2. **維基熱門作品**: 考慮業界認可的優質動漫
+3. **交集推薦**: 優先推薦兩個清單中都出現的作品
+4. **補充推薦**: 基於用戶品味，推薦維基百科熱門但用戶未提及的作品
+
+### 推薦清單 (按優先級排序)
+1. **頂級推薦**: 在用戶清單和維基百科都有提及的作品
+   - 這些作品既符合您的品味，也獲得了廣泛認可
+
+2. **補充推薦**: 維基百科推薦但您未提及的優質作品
+   - 基於您現有品味的擴展推薦
+
+3. **發現推薦**: 小眾但高評價的作品
+   - 適合尋求新鮮內容的觀眾
+
+### 建議
+- 按照推薦順序觀看可以最大化觀影滿意度
+- 可根據您的時間和心情調整觀看順序
+- 歡迎提供反饋以優化推薦
+"""
+    return recommendation
 
 # ==================== 設置LLM ====================
 
@@ -47,77 +134,78 @@ llm = ChatAnthropic(
 
 # ==================== 定義代理 ====================
 
-# 代理1: 動漫評論家
-anime_critic = Agent(
-    role="動漫評論家",
-    goal="深入分析動漫作品，提供專業的評論和洞察",
-    backstory="資深動漫愛好者，擁有15年動漫觀看和評論經驗，熟悉各類型動漫的優缺點",
-    tools=[search_anime_info],
+# 代理1: 用戶清單解析器
+list_reader = Agent(
+    role="用戶清單解析器",
+    goal="準確讀取和解析用戶提供的動漫清單，理解用戶的品味偏好",
+    backstory="資深數據分析師，擅長解析各種格式的數據和信息，能夠準確理解用戶意圖",
+    tools=[read_user_list],
     llm=llm,
     verbose=True
 )
 
-# 代理2: 推薦策略專家
-recommendation_specialist = Agent(
-    role="推薦策略專家",
-    goal="根據動漫特點制定推薦策略，匹配不同類型的觀眾",
-    backstory="內容營銷和推薦系統專家，擅長為不同受眾群體制定針對性的推薦計劃",
-    tools=[],
+# 代理2: 維基百科研究員
+wiki_researcher = Agent(
+    role="維基百科研究員",
+    goal="查詢維基百科獲取年度優質動漫排名和業界認可的優秀作品",
+    backstory="知識庫管理員，熟悉如何從各大百科全書和數據庫中提取有用信息，了解動漫行業趨勢",
+    tools=[search_wikipedia_anime],
     llm=llm,
     verbose=True
 )
 
-# 代理3: 內容創作者
-content_creator = Agent(
-    role="文案創作者",
-    goal="生成高質量、引人入勝的動漫推薦文章",
-    backstory="資深文案寫手，擅長用各種風格創作引人入勝的內容，曾為多家動漫網站和平台創作推薦文章",
-    tools=[generate_recommendation],
+# 代理3: 動漫推薦引擎
+recommender = Agent(
+    role="動漫推薦引擎",
+    goal="根據用戶清單和業界排名，生成個性化的動漫推薦",
+    backstory="資深推薦系統專家，擅長結合多個信息源進行智能推薦，以最大化用戶滿意度",
+    tools=[recommend_anime],
     llm=llm,
     verbose=True
 )
 
 # ==================== 定義任務 ====================
 
-# 任務1: 動漫分析
-task_analysis = Task(
-    description="對動漫 {topic} 進行深入的分析和評論：\n請提供劇情概述、角色評價、視覺風格、評分和推薦指數",
-    agent=anime_critic,
-    expected_output="詳細的動漫分析報告，包括劇情、角色、畫風和整體評價"
+# 任務1: 解析用戶清單
+task_read_list = Task(
+    description="讀取和解析用戶提供的動漫清單。用戶清單為：{user_anime_list}\n請確保準確解析清單內容，並提取用戶的動漫品味偏好",
+    agent=list_reader,
+    expected_output="用戶清單的解析結果和其所反映的品味特徵"
 )
 
-# 任務2: 推薦策略
-task_strategy = Task(
-    description="基於動漫分析結果，為 {topic} 制定推薦策略\n請考慮目標觀眾、最佳觀影順序和推薦重點",
-    agent=recommendation_specialist,
-    expected_output="完整的推薦策略文檔，包括受眾分析和推薦重點"
+# 任務2: 查詢維基百科
+task_wiki = Task(
+    description="查詢維基百科獲取年度優質動漫排名清單和業界認可的優秀作品。請獲取當前年度最受歡迎和評價最高的動漫作品",
+    agent=wiki_researcher,
+    expected_output="維基百科提供的優質動漫清單和相關排名信息"
 )
 
-# 任務3: 推薦文章生成
-task_content = Task(
-    description="根據推薦策略，為 {topic} 生成3個不同風格的推薦文章\n風格包括：劇情分析、觀影指南、推薦理由",
-    agent=content_creator,
-    expected_output="3篇高質量的推薦文章，每篇風格不同"
+# 任務3: 生成推薦
+task_recommend = Task(
+    description="基於用戶清單和維基百科的優質動漫排名，為用戶生成個性化推薦。\n請分析兩個清單的交集和差異，推薦最適合用戶的動漫作品",
+    agent=recommender,
+    expected_output="個性化的動漫推薦清單，包含推薦理由和觀影建議"
 )
 
 # ==================== 創建團隊並執行 ====================
 
-def run_crew(topic: str):
-    """運行CrewAI團隊"""
+def run_crew(user_anime_list: str):
+    """運行CrewAI推薦系統"""
     print(f"\n{'='*60}")
-    print(f"開始為您分析動漫: {topic}")
+    print(f"開始動漫推薦流程")
+    print(f"用戶提供的清單: {user_anime_list}")
     print(f"{'='*60}\n")
 
     # 創建團隊，定義任務順序
     crew = Crew(
-        agents=[anime_critic, recommendation_specialist, content_creator],
-        tasks=[task_analysis, task_strategy, task_content],
+        agents=[list_reader, wiki_researcher, recommender],
+        tasks=[task_read_list, task_wiki, task_recommend],
         verbose=True,
         max_iter=3  # 每個任務的最大迭代次數
     )
 
     # 執行流程
-    result = crew.kickoff(inputs={"topic": topic})
+    result = crew.kickoff(inputs={"user_anime_list": user_anime_list})
 
     print(f"\n{'='*60}")
     print("推薦結果:")
@@ -135,6 +223,8 @@ if __name__ == "__main__":
         print("請設置: export ANTHROPIC_API_KEY='your-key-here'")
         print("\n將使用本地模擬模式運行...")
 
-    # 運行示例 - 分析經典動漫
-    topic = "鬼滅之刃"
-    run_crew(topic)
+    # 示例用戶清單 (JSON格式)
+    user_anime_list = '''["進擊的巨人", "咒術回戰", "鬼滅之刃", "死亡筆記"]'''
+
+    # 運行推薦系統
+    run_crew(user_anime_list)
