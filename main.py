@@ -216,6 +216,48 @@ def run_crew(user_anime_list: str):
 
 # ==================== 主程序 ====================
 
+def load_anime_list_from_file(filename: str = "anime_list.json") -> str:
+    """從外部 JSON 文件讀取動漫清單"""
+    try:
+        # 獲取當前腳本所在的目錄
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        file_path = os.path.join(script_dir, filename)
+
+        if not os.path.exists(file_path):
+            print(f"錯誤: 找不到清單文件 '{filename}'")
+            print(f"預期位置: {file_path}")
+            print("\n請創建一個 JSON 格式的清單文件，例如:")
+            print('''
+{
+  "anime_list.json": [
+    "進擊的巨人",
+    "咒術回戰",
+    "鬼滅之刃"
+  ]
+}
+''')
+            return None
+
+        with open(file_path, 'r', encoding='utf-8') as f:
+            anime_list = json.load(f)
+
+        # 確保是列表格式
+        if not isinstance(anime_list, list):
+            print(f"錯誤: {filename} 格式不正確，應該是 JSON 陣列")
+            return None
+
+        # 轉換為 JSON 字符串供 CrewAI 使用
+        json_string = json.dumps(anime_list, ensure_ascii=False)
+        print(f"✓ 成功讀取清單，包含 {len(anime_list)} 部動漫")
+        return json_string
+
+    except json.JSONDecodeError as e:
+        print(f"錯誤: 無法解析 {filename} 的 JSON 格式: {e}")
+        return None
+    except Exception as e:
+        print(f"錯誤: 讀取清單文件失敗: {e}")
+        return None
+
 if __name__ == "__main__":
     # 檢查API密鑰
     if not os.getenv("ANTHROPIC_API_KEY"):
@@ -223,8 +265,11 @@ if __name__ == "__main__":
         print("請設置: export ANTHROPIC_API_KEY='your-key-here'")
         print("\n將使用本地模擬模式運行...")
 
-    # 示例用戶清單 (JSON格式)
-    user_anime_list = '''["進擊的巨人", "咒術回戰", "鬼滅之刃", "死亡筆記"]'''
+    # 從外部文件讀取用戶清單
+    user_anime_list = load_anime_list_from_file("anime_list.json")
 
-    # 運行推薦系統
-    run_crew(user_anime_list)
+    if user_anime_list:
+        # 運行推薦系統
+        run_crew(user_anime_list)
+    else:
+        print("\n無法加載清單，程式終止。")
