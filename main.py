@@ -37,6 +37,8 @@ def read_user_list(json_string: str) -> str:
 @tool
 def search_wikipedia_anime() -> str:
     """查詢維基百科的年度動漫排名清單"""
+    print("\n[維基百科查詢] 正在查詢維基百科...")
+
     try:
         # 查詢維基百科中文版本的動漫列表
         url = "https://zh.wikipedia.org/zh-tw/%E5%90%84%E5%B9%B4%E6%97%A5%E6%9C%AC%E5%8B%95%E7%95%AB%E5%88%97%E8%A1%A8"
@@ -44,9 +46,12 @@ def search_wikipedia_anime() -> str:
 
         response = requests.get(url, headers=headers, timeout=5)
 
-        # 查詢失敗直接返回錯誤
+        # 查詢失敗直接返回錯誤並停止
         if response.status_code != 200:
-            return f"錯誤：維基百科查詢失敗 (HTTP {response.status_code})"
+            error_msg = f"❌ 維基百科查詢失敗 (HTTP {response.status_code})"
+            print(f"[維基百科查詢] {error_msg}")
+            print("[維基百科查詢] 工作流將停止執行")
+            raise Exception(error_msg)
 
         soup = BeautifulSoup(response.content, 'html.parser')
 
@@ -62,17 +67,38 @@ def search_wikipedia_anime() -> str:
                     anime_list.append(title)
 
         if not anime_list:
-            return "錯誤：未能從維基百科提取動漫資訊"
+            error_msg = "❌ 未能從維基百科提取動漫資訊"
+            print(f"[維基百科查詢] {error_msg}")
+            print("[維基百科查詢] 工作流將停止執行")
+            raise Exception(error_msg)
 
         formatted_list = "\n".join([f"- {anime}" for anime in anime_list[:15]])
-        return f"從維基百科獲得的年度優質動漫清單：\n{formatted_list}"
+        result = f"從維基百科獲得的年度優質動漫清單：\n{formatted_list}"
+
+        print(f"[維基百科查詢] ✅ 成功抓取 {len(anime_list[:15])} 部動漫")
+        print(f"[維基百科查詢] 資料預覽：{', '.join(anime_list[:5])}...")
+
+        return result
 
     except requests.exceptions.Timeout:
-        return "錯誤：維基百科查詢逾時"
+        error_msg = "❌ 維基百科查詢逾時"
+        print(f"[維基百科查詢] {error_msg}")
+        print("[維基百科查詢] 工作流將停止執行")
+        raise Exception(error_msg)
     except requests.exceptions.ConnectionError:
-        return "錯誤：無法連線到維基百科"
+        error_msg = "❌ 無法連線到維基百科"
+        print(f"[維基百科查詢] {error_msg}")
+        print("[維基百科查詢] 工作流將停止執行")
+        raise Exception(error_msg)
     except Exception as e:
-        return f"錯誤：維基百科查詢發生錯誤: {str(e)}"
+        # 如果已經是我們拋出的異常，直接重新拋出
+        if "維基百科" in str(e):
+            raise
+        # 否則是未預期的錯誤
+        error_msg = f"❌ 維基百科查詢發生錯誤: {str(e)}"
+        print(f"[維基百科查詢] {error_msg}")
+        print("[維基百科查詢] 工作流將停止執行")
+        raise Exception(error_msg)
 
 @tool
 def recommend_anime(user_list: str, wiki_list: str) -> str:
@@ -208,14 +234,24 @@ def run_crew(user_anime_list: str):
     )
 
     # 執行流程
-    print("正在執行推薦任務，請稍候...")
-    result = crew.kickoff(inputs={"user_anime_list": user_anime_list})
+    try:
+        print("正在執行推薦任務，請稍候...")
+        result = crew.kickoff(inputs={"user_anime_list": user_anime_list})
 
-    print(f"\n{'='*60}")
-    print("✅ 推薦完成！結果已保存到 recommendation.md")
-    print(f"{'='*60}\n")
+        print(f"\n{'='*60}")
+        print("✅ 推薦完成！結果已保存到 recommendation.md")
+        print(f"{'='*60}\n")
 
-    return result
+        return result
+
+    except Exception as e:
+        print(f"\n{'='*60}")
+        print("❌ 工作流執行失敗")
+        print(f"{'='*60}")
+        print(f"\n錯誤原因: {str(e)}")
+        print("\n程序已終止。")
+        print(f"{'='*60}\n")
+        return None
 
 # ==================== 主程序 ====================
 
