@@ -56,7 +56,10 @@ def search_wikipedia_anime() -> str:
         soup = BeautifulSoup(response.content, 'html.parser')
 
         # 提取分類中的動漫標題
+        print(f"[維基百科查詢] 正在解析網頁內容...")
         categories = soup.find_all('div', {'class': 'mw-category'})
+        print(f"[維基百科查詢] 找到 {len(categories)} 個分類區塊")
+
         anime_list = []
 
         for category in categories:
@@ -66,9 +69,12 @@ def search_wikipedia_anime() -> str:
                 if title and not title.startswith('Category'):
                     anime_list.append(title)
 
+        print(f"[維基百科查詢] 總共提取到 {len(anime_list)} 部動漫")
+
         if not anime_list:
-            error_msg = "❌ 未能從維基百科提取動漫資訊"
+            error_msg = "❌ 未能從維基百科提取動漫資訊（網頁結構可能已改變）"
             print(f"[維基百科查詢] {error_msg}")
+            print(f"[維基百科查詢] URL: {url}")
             print("[維基百科查詢] 工作流將停止執行")
             raise Exception(error_msg)
 
@@ -225,19 +231,19 @@ def run_crew(user_anime_list: str):
     print(f"開始動漫推薦流程")
     print(f"{'='*60}\n")
 
-    # 創建團隊，定義任務順序
+    # 創建團隊，定義任務順序（優先查詢維基百科）
     crew = Crew(
-        agents=[list_reader, wiki_researcher, recommender],
-        tasks=[task_read_list, task_wiki, task_recommend],
+        agents=[wiki_researcher, list_reader, recommender],
+        tasks=[task_wiki, task_read_list, task_recommend],
         verbose=False,  # 關閉詳細日誌輸出
-        max_iter=3  # 每個任務的最大迭代次數
+        max_iter=1  # 減少重試次數，失敗快速停止
     )
 
     # 執行流程
     try:
         print("正在執行推薦任務...")
-        print("\n[步驟 1/3] 解析用戶清單...")
-        print("[步驟 2/3] 查詢維基百科...")
+        print("\n[步驟 1/3] 查詢維基百科... (優先檢查)")
+        print("[步驟 2/3] 解析用戶清單...")
         print("[步驟 3/3] 生成推薦並保存...")
         print("\n請稍候，代理正在工作中...\n")
         result = crew.kickoff(inputs={"user_anime_list": user_anime_list})
