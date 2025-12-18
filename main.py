@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-CrewAI MVP: 動漫推薦系統 (增強版)
+CrewAI MVP: 智能動漫推薦系統
 這個示例展示了多個代理如何協作：
-- 代理1: 讀取用戶提供的動漫清單
-- 代理2: 查詢維基百科的年度動漫排名
-- 代理3: 根據兩個清單推薦動漫
+- 代理1: 讀取用戶提供的動漫清單並分析品味
+- 代理2: 根據用戶品味搜尋並推薦類似動漫
+- 代理3: 驗證推薦動漫的存在性和動畫化狀態，生成最終推薦文檔
 """
 
 import os
@@ -35,117 +35,42 @@ def read_user_list(json_string: str) -> str:
         return f"錯誤：無法解析 JSON。收到的內容：{json_string}"
 
 @tool
-def search_wikipedia_anime() -> str:
-    """查詢維基百科的年度動漫排名清單（失敗時使用內置數據）"""
-    print("\n[維基百科查詢] 正在查詢維基百科...")
+def search_similar_anime(user_taste_summary: str) -> str:
+    """根據用戶品味搜尋類似的動漫推薦"""
+    print("\n[動漫推薦搜尋] 正在分析用戶品味並搜尋推薦...")
+    print(f"[動漫推薦搜尋] 用戶品味: {user_taste_summary[:100]}...")
 
-    # 內置的熱門動漫數據（降級方案）
-    fallback_anime_list = [
-        "進擊的巨人", "咒術回戰", "鬼滅之刃", "死亡筆記", "東京喰種",
-        "我的英雄學院", "JOJO的奇妙冒險", "Re:從零開始的異世界生活",
-        "約定的夢幻島", "86－不存在的戰區－", "SPY×FAMILY間諜家家酒",
-        "葬送的芙莉蓮", "電鋸人", "藍色監獄", "無職轉生"
-    ]
+    # 這個工具會由 LLM 調用，LLM 會基於用戶品味和它的知識庫來推薦動漫
+    # 返回提示，讓 LLM 知道應該如何使用它的知識
+    return """請根據用戶的動漫品味，推薦 10-15 部類似風格的動漫。
 
-    try:
-        # 查詢維基百科中文版本的動漫列表
-        url = "https://zh.wikipedia.org/zh-tw/%E5%90%84%E5%B9%B4%E6%97%A5%E6%9C%AC%E5%8B%95%E7%95%AB%E5%88%97%E8%A1%A8"
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+要求：
+1. 分析用戶清單中動漫的共同特點（類型、主題、風格）
+2. 推薦相似但用戶可能沒看過的動漫
+3. 包含不同年代的作品（經典+新番）
+4. 列出每部動漫的名稱和簡短推薦理由
+5. 優先推薦已完結或正在連載的熱門作品
 
-        response = requests.get(url, headers=headers, timeout=5)
-
-        # 查詢失敗直接返回錯誤並停止
-        if response.status_code != 200:
-            error_msg = f"❌ 維基百科查詢失敗 (HTTP {response.status_code})"
-            print(f"[維基百科查詢] {error_msg}")
-            print("[維基百科查詢] 工作流將停止執行")
-            raise Exception(error_msg)
-
-        soup = BeautifulSoup(response.content, 'html.parser')
-
-        # 提取分類中的動漫標題
-        print(f"[維基百科查詢] 正在解析網頁內容...")
-        categories = soup.find_all('div', {'class': 'mw-category'})
-        print(f"[維基百科查詢] 找到 {len(categories)} 個分類區塊")
-
-        anime_list = []
-
-        for category in categories:
-            links = category.find_all('a')
-            for link in links[:20]:  # 限制前20個
-                title = link.get_text(strip=True)
-                if title and not title.startswith('Category'):
-                    anime_list.append(title)
-
-        print(f"[維基百科查詢] 總共提取到 {len(anime_list)} 部動漫")
-
-        if not anime_list:
-            print("[維基百科查詢] ⚠️  無法從維基百科提取數據")
-            print("[維基百科查詢] 使用內置熱門動漫數據作為降級方案")
-            anime_list = fallback_anime_list
-
-        formatted_list = "\n".join([f"- {anime}" for anime in anime_list[:15]])
-        result = f"從維基百科獲得的年度優質動漫清單：\n{formatted_list}"
-
-        print(f"[維基百科查詢] ✅ 成功抓取 {len(anime_list[:15])} 部動漫")
-        print(f"[維基百科查詢] 資料預覽：{', '.join(anime_list[:5])}...")
-
-        return result
-
-    except requests.exceptions.Timeout:
-        print("[維基百科查詢] ⚠️  查詢逾時，使用內置數據")
-        anime_list = fallback_anime_list
-    except requests.exceptions.ConnectionError:
-        print("[維基百科查詢] ⚠️  無法連線到維基百科，使用內置數據")
-        anime_list = fallback_anime_list
-    except requests.exceptions.RequestException as e:
-        print(f"[維基百科查詢] ⚠️  網絡錯誤 ({e})，使用內置數據")
-        anime_list = fallback_anime_list
-    except Exception as e:
-        print(f"[維基百科查詢] ⚠️  發生錯誤 ({e})，使用內置數據")
-        anime_list = fallback_anime_list
-
-    # 如果執行到這裡，說明使用了 fallback 數據
-    if anime_list == fallback_anime_list:
-        formatted_list = "\n".join([f"- {anime}" for anime in anime_list])
-        result = f"使用內置熱門動漫清單（維基百科不可用）：\n{formatted_list}"
-
-        print(f"[維基百科查詢] ✅ 使用內置數據，包含 {len(anime_list)} 部熱門動漫")
-        print(f"[維基百科查詢] 資料預覽：{', '.join(anime_list[:5])}...")
-
-        return result
+請以清單格式返回推薦結果。"""
 
 @tool
-def recommend_anime(user_list: str, wiki_list: str) -> str:
-    """根據用戶清單和維基百科清單推薦動漫"""
-    recommendation = f"""## 動漫推薦結果
+def verify_anime_info(anime_list: str) -> str:
+    """驗證動漫清單中每部作品的存在性和動畫化狀態"""
+    print("\n[動漫驗證] 正在驗證推薦清單中的動漫信息...")
+    print(f"[動漫驗證] 待驗證清單: {anime_list[:150]}...")
 
-### 分析
-- **用戶清單**: {user_list}
-- **維基百科熱門作品**: {wiki_list}
+    # 這個工具會由 LLM 調用，LLM 會使用它的知識來驗證動漫信息
+    return """請對推薦清單中的每部動漫進行驗證，提供以下信息：
 
-### 推薦策略
-1. **用戶已知作品**: 根據用戶提供的清單，理解其品味偏好
-2. **維基熱門作品**: 考慮業界認可的優質動漫
-3. **交集推薦**: 優先推薦兩個清單中都出現的作品
-4. **補充推薦**: 基於用戶品味，推薦維基百科熱門但用戶未提及的作品
+驗證要求：
+1. **動漫是否存在**: 確認這是真實存在的動漫作品
+2. **動畫化狀態**: 確認是否已經動畫化（TV動畫/劇場版/OVA）
+   - 如果只有漫畫/小說，標註「未動畫化」並從推薦中移除
+3. **基本信息**: 年份、類型、簡介
+4. **評分/人氣**: 大致的評價和人氣程度
+5. **觀看建議**: 適合什麼類型的觀眾
 
-### 推薦清單 (按優先級排序)
-1. **頂級推薦**: 在用戶清單和維基百科都有提及的作品
-   - 這些作品既符合您的品味，也獲得了廣泛認可
-
-2. **補充推薦**: 維基百科推薦但您未提及的優質作品
-   - 基於您現有品味的擴展推薦
-
-3. **發現推薦**: 小眾但高評價的作品
-   - 適合尋求新鮮內容的觀眾
-
-### 建議
-- 按照推薦順序觀看可以最大化觀影滿意度
-- 可根據您的時間和心情調整觀看順序
-- 歡迎提供反饋以優化推薦
-"""
-    return recommendation
+請只保留已動畫化的作品，並以結構化格式輸出驗證結果。"""
 
 @tool
 def save_recommendation_to_file(recommendation_content: str, filename: str = "recommendation.md") -> str:
@@ -189,22 +114,22 @@ list_reader = Agent(
     verbose=False
 )
 
-# 代理2: 維基百科研究員
-wiki_researcher = Agent(
-    role="維基百科研究員",
-    goal="查詢維基百科獲取年度優質動漫排名和業界認可的優秀作品",
-    backstory="知識庫管理員，熟悉如何從各大百科全書和數據庫中提取有用信息，了解動漫行業趨勢",
-    tools=[search_wikipedia_anime],
+# 代理2: 動漫推薦專家
+recommendation_researcher = Agent(
+    role="動漫推薦專家",
+    goal="根據用戶的動漫品味，搜尋並推薦類似風格的優質動漫作品",
+    backstory="資深動漫評論家和推薦系統專家，擁有豐富的動漫知識庫，擅長分析用戶品味並提供個性化推薦",
+    tools=[search_similar_anime],
     llm=llm,
-    verbose=True  # 開啟以便查看查詢進度
+    verbose=False
 )
 
-# 代理3: 動漫推薦引擎
-recommender = Agent(
-    role="動漫推薦引擎",
-    goal="根據用戶清單和業界排名，生成個性化的動漫推薦，並保存結果為 Markdown 文件",
-    backstory="資深推薦系統專家，擅長結合多個信息源進行智能推薦，以最大化用戶滿意度，並能將結果專業地輸出為文檔",
-    tools=[recommend_anime, save_recommendation_to_file],
+# 代理3: 動漫資訊驗證專家
+anime_verifier = Agent(
+    role="動漫資訊驗證專家",
+    goal="驗證推薦動漫的存在性和動畫化狀態，生成經過驗證的推薦清單並保存為 Markdown 文件",
+    backstory="動漫數據庫專家，精通各類動漫作品信息，能夠快速驗證動漫的存在性、動畫化狀態、評分和人氣，並將結果專業地輸出為文檔",
+    tools=[verify_anime_info, save_recommendation_to_file],
     llm=llm,
     verbose=False
 )
@@ -218,18 +143,18 @@ task_read_list = Task(
     expected_output="用戶清單的解析結果和其所反映的品味特徵"
 )
 
-# 任務2: 查詢維基百科
-task_wiki = Task(
-    description="查詢維基百科獲取年度優質動漫排名清單和業界認可的優秀作品。請獲取當前年度最受歡迎和評價最高的動漫作品",
-    agent=wiki_researcher,
-    expected_output="維基百科提供的優質動漫清單和相關排名信息"
+# 任務2: 基於品味搜尋推薦
+task_search_recommendations = Task(
+    description="根據用戶清單分析其動漫品味偏好，搜尋並推薦 10-15 部類似風格的動漫作品。\n要求推薦的動漫風格與用戶清單相似，但避免重複用戶已提及的作品。\n包含不同年代的作品（經典+新番），並簡要說明推薦理由。",
+    agent=recommendation_researcher,
+    expected_output="基於用戶品味的 10-15 部動漫推薦清單，包含推薦理由"
 )
 
-# 任務3: 生成推薦並保存
-task_recommend = Task(
-    description="基於用戶清單和維基百科的優質動漫排名，為用戶生成個性化推薦。\n請分析兩個清單的交集和差異，推薦最適合用戶的動漫作品。\n最後，將推薦結果以 Markdown 格式保存到 recommendation.md 文件。",
-    agent=recommender,
-    expected_output="個性化的動漫推薦清單，包含推薦理由和觀影建議，並已保存為 Markdown 文件"
+# 任務3: 驗證推薦並生成文檔
+task_verify_and_save = Task(
+    description="驗證推薦清單中每部動漫的存在性和動畫化狀態。\n要求：\n1. 確認動漫是否真實存在\n2. 確認是否已經動畫化（TV/劇場版/OVA）\n3. 移除未動畫化的作品（僅漫畫/小說）\n4. 提供基本信息（年份、類型、評分）\n5. 生成完整的推薦文檔\n\n最後，將驗證後的推薦結果以 Markdown 格式保存到 recommendation.md 文件。",
+    agent=anime_verifier,
+    expected_output="經過驗證的動漫推薦清單（僅已動畫化作品），包含詳細信息和觀看建議，並已保存為 Markdown 文件"
 )
 
 # ==================== 創建團隊並執行 ====================
@@ -240,20 +165,20 @@ def run_crew(user_anime_list: str):
     print(f"開始動漫推薦流程")
     print(f"{'='*60}\n")
 
-    # 創建團隊，定義任務順序（優先查詢維基百科）
+    # 創建團隊，定義任務順序
     crew = Crew(
-        agents=[wiki_researcher, list_reader, recommender],
-        tasks=[task_wiki, task_read_list, task_recommend],
+        agents=[list_reader, recommendation_researcher, anime_verifier],
+        tasks=[task_read_list, task_search_recommendations, task_verify_and_save],
         verbose=False,  # 關閉詳細日誌輸出
-        max_iter=1  # 減少重試次數，失敗快速停止
+        max_iter=2  # 每個任務最多重試2次
     )
 
     # 執行流程
     try:
         print("正在執行推薦任務...")
-        print("\n[步驟 1/3] 查詢維基百科... (優先檢查)")
-        print("[步驟 2/3] 解析用戶清單...")
-        print("[步驟 3/3] 生成推薦並保存...")
+        print("\n[步驟 1/3] 解析用戶清單，分析品味...")
+        print("[步驟 2/3] 基於品味搜尋推薦...")
+        print("[步驟 3/3] 驗證動漫信息並生成文檔...")
         print("\n請稍候，代理正在工作中...\n")
         result = crew.kickoff(inputs={"user_anime_list": user_anime_list})
 
