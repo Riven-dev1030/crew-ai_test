@@ -216,18 +216,41 @@ def run_crew(user_anime_list: str):
 
 # ==================== 主程序 ====================
 
-def load_anime_list_from_file(filename: str = "anime_list.json") -> str:
-    """從外部文件讀取動漫清單，支援多種格式 (JSON、純文本、CSV)"""
-    try:
-        # 獲取當前腳本所在的目錄
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        file_path = os.path.join(script_dir, filename)
+def find_latest_anime_list_file():
+    """自動偵測最新修改的動漫清單文件"""
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    supported_files = ["anime_list.json", "anime_list.txt", "anime_list.csv"]
 
-        if not os.path.exists(file_path):
-            print(f"錯誤: 找不到清單文件 '{filename}'")
-            print(f"預期位置: {file_path}")
-            print("\n請創建一個清單文件，支援的格式有：")
-            print('''
+    # 檢查哪些文件存在並獲取其修改時間
+    existing_files = {}
+    for filename in supported_files:
+        file_path = os.path.join(script_dir, filename)
+        if os.path.exists(file_path):
+            mtime = os.path.getmtime(file_path)
+            existing_files[filename] = (file_path, mtime)
+
+    if not existing_files:
+        return None
+
+    # 找出最新修改的文件
+    latest_file = max(existing_files.items(), key=lambda x: x[1][1])
+    return latest_file[0], latest_file[1][0]
+
+def load_anime_list_from_file(filename: str = None) -> str:
+    """從外部文件讀取動漫清單，支援多種格式 (JSON、純文本、CSV)
+
+    如果沒有指定文件名，會自動偵測最新修改的清單文件
+    """
+    try:
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+
+        # 如果沒有指定文件名，自動偵測最新修改的文件
+        if filename is None:
+            result = find_latest_anime_list_file()
+            if result is None:
+                print("錯誤: 找不到任何清單文件")
+                print("\n請創建一個清單文件，支援的格式有：")
+                print('''
 1. JSON 格式 (anime_list.json):
 [
   "進擊的巨人",
@@ -245,6 +268,15 @@ def load_anime_list_from_file(filename: str = "anime_list.json") -> str:
 咒術回戰
 鬼滅之刃
 ''')
+                return None
+            filename, file_path = result
+            print(f"✓ 自動偵測到最新清單文件: {filename}")
+        else:
+            file_path = os.path.join(script_dir, filename)
+
+        if not os.path.exists(file_path):
+            print(f"錯誤: 找不到清單文件 '{filename}'")
+            print(f"預期位置: {file_path}")
             return None
 
         # 根據文件副檔名判斷格式
@@ -297,8 +329,8 @@ if __name__ == "__main__":
         print("請設置: export ANTHROPIC_API_KEY='your-key-here'")
         print("\n將使用本地模擬模式運行...")
 
-    # 從外部文件讀取用戶清單
-    user_anime_list = load_anime_list_from_file("anime_list.json")
+    # 從外部文件讀取用戶清單（自動偵測最新修改的文件）
+    user_anime_list = load_anime_list_from_file()
 
     if user_anime_list:
         # 運行推薦系統
