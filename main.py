@@ -44,19 +44,9 @@ def search_wikipedia_anime() -> str:
 
         response = requests.get(url, headers=headers, timeout=5)
 
-        # 如果查詢失敗，返回模擬資料
+        # 查詢失敗直接返回錯誤
         if response.status_code != 200:
-            return """維基百科查詢失敗，返回常見的優質動漫：
-- 進擊的巨人 (2013-2023)
-- 咒術回戰 (2020-2023)
-- 鬼滅之刃 (2019-2023)
-- 死亡筆記 (2006-2007)
-- Code Geass (2006-2008)
-- Steins;Gate (2011)
-- Re:Zero (2016-2021)
-- 86 Eighty-Six (2021-2023)
-- 魔法少女小圓 (2011)
-- 新世紀福音戰士 (1995-1996)"""
+            return f"錯誤：維基百科查詢失敗 (HTTP {response.status_code})"
 
         soup = BeautifulSoup(response.content, 'html.parser')
 
@@ -71,25 +61,18 @@ def search_wikipedia_anime() -> str:
                 if title and not title.startswith('Category'):
                     anime_list.append(title)
 
-        if anime_list:
-            formatted_list = "\n".join([f"- {anime}" for anime in anime_list[:15]])
-            return f"從維基百科獲得的年度優質動漫清單：\n{formatted_list}"
-        else:
-            # 返回備用的經典清單
-            return """維基百科查詢完成，以下是常見的優質動漫：
-- 進擊的巨人
-- 咒術回戰
-- 鬼滅之刃
-- 死亡筆記
-- Code Geass"""
+        if not anime_list:
+            return "錯誤：未能從維基百科提取動漫資訊"
+
+        formatted_list = "\n".join([f"- {anime}" for anime in anime_list[:15]])
+        return f"從維基百科獲得的年度優質動漫清單：\n{formatted_list}"
+
+    except requests.exceptions.Timeout:
+        return "錯誤：維基百科查詢逾時"
+    except requests.exceptions.ConnectionError:
+        return "錯誤：無法連線到維基百科"
     except Exception as e:
-        return f"""維基百科查詢發生錯誤: {str(e)}
-返回常見的優質動漫：
-- 進擊的巨人
-- 咒術回戰
-- 鬼滅之刃
-- 死亡筆記
-- Steins;Gate"""
+        return f"錯誤：維基百科查詢發生錯誤: {str(e)}"
 
 @tool
 def recommend_anime(user_list: str, wiki_list: str) -> str:
