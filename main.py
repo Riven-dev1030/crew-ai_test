@@ -5,7 +5,6 @@ CrewAI MVP: 動漫介紹與推薦系統
 """
 
 import os
-from datetime import datetime
 from dotenv import load_dotenv
 from crewai import Agent, Task, Crew
 from crewai.tools import tool
@@ -37,6 +36,28 @@ def generate_recommendation(anime_name: str, style: str) -> str:
         "推薦理由": f"## 為什麼要看{anime_name}\n\n{anime_name}是一部不容錯過的傑作。它兼具視覺震撼和情感深度，能夠引發觀眾的思考..."
     }
     return styles.get(style, f"關於{anime_name}的{style}推薦文章")
+
+@tool
+def save_recommendation_to_file(recommendation_content: str, filename: str = "recommendation.md") -> str:
+    """將推薦結果保存為 Markdown 文件"""
+    try:
+        # 獲取當前腳本所在的目錄
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+
+        # 確保文件名以 .md 結尾
+        if not filename.endswith('.md'):
+            filename = filename + '.md'
+
+        file_path = os.path.join(script_dir, filename)
+
+        # 寫入文件
+        with open(file_path, 'w', encoding='utf-8') as f:
+            f.write(recommendation_content)
+
+        return f"✓ 推薦結果已保存到: {filename}"
+
+    except Exception as e:
+        return f"❌ 保存文件失敗: {str(e)}"
 
 # ==================== 設置LLM ====================
 
@@ -71,9 +92,9 @@ recommendation_specialist = Agent(
 # 代理3: 內容創作者
 content_creator = Agent(
     role="文案創作者",
-    goal="生成高質量、引人入勝的動漫推薦文章",
-    backstory="資深文案寫手，擅長用各種風格創作引人入勝的內容，曾為多家動漫網站和平台創作推薦文章",
-    tools=[generate_recommendation],
+    goal="生成高質量、引人入勝的動漫推薦文章，並保存結果為 Markdown 文件",
+    backstory="資深文案寫手，擅長用各種風格創作引人入勝的內容，曾為多家動漫網站和平台創作推薦文章，並能將結果專業地輸出為文檔",
+    tools=[generate_recommendation, save_recommendation_to_file],
     llm=llm,
     verbose=False
 )
@@ -94,11 +115,11 @@ task_strategy = Task(
     expected_output="完整的推薦策略文檔，包括受眾分析和推薦重點"
 )
 
-# 任務3: 推薦文章生成
+# 任務3: 推薦文章生成並保存
 task_content = Task(
-    description="根據推薦策略，為 {topic} 生成3個不同風格的推薦文章\n風格包括：劇情分析、觀影指南、推薦理由",
+    description="根據推薦策略，為 {topic} 生成3個不同風格的推薦文章\n風格包括：劇情分析、觀影指南、推薦理由\n最後，將完整的推薦文章以 Markdown 格式保存到 recommendation.md 文件",
     agent=content_creator,
-    expected_output="3篇高質量的推薦文章，每篇風格不同"
+    expected_output="3篇高質量的推薦文章，每篇風格不同，並已保存為 Markdown 文件"
 )
 
 # ==================== 創建團隊並執行 ====================
@@ -121,23 +142,8 @@ def run_crew(topic: str):
     print("正在執行分析任務，請稍候...")
     result = crew.kickoff(inputs={"topic": topic})
 
-    # 保存結果到文件
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"推薦結果_{topic}_{timestamp}.txt"
-
-    with open(filename, 'w', encoding='utf-8') as f:
-        f.write(f"{'='*60}\n")
-        f.write(f"動漫推薦分析結果\n")
-        f.write(f"主題: {topic}\n")
-        f.write(f"生成時間: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-        f.write(f"{'='*60}\n\n")
-        f.write(str(result))
-        f.write(f"\n\n{'='*60}\n")
-        f.write("分析完成\n")
-        f.write(f"{'='*60}\n")
-
     print(f"\n{'='*60}")
-    print(f"✅ 分析完成！結果已保存到文件: {filename}")
+    print("✅ 分析完成！")
     print(f"{'='*60}\n")
 
     return result

@@ -42,4 +42,4 @@ Thumbs.db
 *.log
 
 # Generated results
-推薦結果_*.txt
+recommendation.md
