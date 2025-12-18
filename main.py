@@ -36,8 +36,16 @@ def read_user_list(json_string: str) -> str:
 
 @tool
 def search_wikipedia_anime() -> str:
-    """查詢維基百科的年度動漫排名清單"""
+    """查詢維基百科的年度動漫排名清單（失敗時使用內置數據）"""
     print("\n[維基百科查詢] 正在查詢維基百科...")
+
+    # 內置的熱門動漫數據（降級方案）
+    fallback_anime_list = [
+        "進擊的巨人", "咒術回戰", "鬼滅之刃", "死亡筆記", "東京喰種",
+        "我的英雄學院", "JOJO的奇妙冒險", "Re:從零開始的異世界生活",
+        "約定的夢幻島", "86－不存在的戰區－", "SPY×FAMILY間諜家家酒",
+        "葬送的芙莉蓮", "電鋸人", "藍色監獄", "無職轉生"
+    ]
 
     try:
         # 查詢維基百科中文版本的動漫列表
@@ -72,11 +80,9 @@ def search_wikipedia_anime() -> str:
         print(f"[維基百科查詢] 總共提取到 {len(anime_list)} 部動漫")
 
         if not anime_list:
-            error_msg = "❌ 未能從維基百科提取動漫資訊（網頁結構可能已改變）"
-            print(f"[維基百科查詢] {error_msg}")
-            print(f"[維基百科查詢] URL: {url}")
-            print("[維基百科查詢] 工作流將停止執行")
-            raise Exception(error_msg)
+            print("[維基百科查詢] ⚠️  無法從維基百科提取數據")
+            print("[維基百科查詢] 使用內置熱門動漫數據作為降級方案")
+            anime_list = fallback_anime_list
 
         formatted_list = "\n".join([f"- {anime}" for anime in anime_list[:15]])
         result = f"從維基百科獲得的年度優質動漫清單：\n{formatted_list}"
@@ -87,24 +93,27 @@ def search_wikipedia_anime() -> str:
         return result
 
     except requests.exceptions.Timeout:
-        error_msg = "❌ 維基百科查詢逾時"
-        print(f"[維基百科查詢] {error_msg}")
-        print("[維基百科查詢] 工作流將停止執行")
-        raise Exception(error_msg)
+        print("[維基百科查詢] ⚠️  查詢逾時，使用內置數據")
+        anime_list = fallback_anime_list
     except requests.exceptions.ConnectionError:
-        error_msg = "❌ 無法連線到維基百科"
-        print(f"[維基百科查詢] {error_msg}")
-        print("[維基百科查詢] 工作流將停止執行")
-        raise Exception(error_msg)
+        print("[維基百科查詢] ⚠️  無法連線到維基百科，使用內置數據")
+        anime_list = fallback_anime_list
+    except requests.exceptions.RequestException as e:
+        print(f"[維基百科查詢] ⚠️  網絡錯誤 ({e})，使用內置數據")
+        anime_list = fallback_anime_list
     except Exception as e:
-        # 如果已經是我們拋出的異常，直接重新拋出
-        if "維基百科" in str(e):
-            raise
-        # 否則是未預期的錯誤
-        error_msg = f"❌ 維基百科查詢發生錯誤: {str(e)}"
-        print(f"[維基百科查詢] {error_msg}")
-        print("[維基百科查詢] 工作流將停止執行")
-        raise Exception(error_msg)
+        print(f"[維基百科查詢] ⚠️  發生錯誤 ({e})，使用內置數據")
+        anime_list = fallback_anime_list
+
+    # 如果執行到這裡，說明使用了 fallback 數據
+    if anime_list == fallback_anime_list:
+        formatted_list = "\n".join([f"- {anime}" for anime in anime_list])
+        result = f"使用內置熱門動漫清單（維基百科不可用）：\n{formatted_list}"
+
+        print(f"[維基百科查詢] ✅ 使用內置數據，包含 {len(anime_list)} 部熱門動漫")
+        print(f"[維基百科查詢] 資料預覽：{', '.join(anime_list[:5])}...")
+
+        return result
 
 @tool
 def recommend_anime(user_list: str, wiki_list: str) -> str:
