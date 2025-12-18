@@ -39,7 +39,7 @@ def search_wikipedia_anime() -> str:
     """查詢維基百科的年度動漫排名清單"""
     try:
         # 查詢維基百科中文版本的動漫列表
-        url = "https://zh.wikipedia.org/wiki/Category:%E5%8B%95%E7%95%AB_by_year"
+        url = "https://zh.wikipedia.org/zh-tw/%E5%90%84%E5%B9%B4%E6%97%A5%E6%9C%AC%E5%8B%95%E7%95%AB%E5%88%97%E8%A1%A8"
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
 
         response = requests.get(url, headers=headers, timeout=5)
